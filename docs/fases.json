@@ -1,0 +1,10 @@
+[
+  {
+    "phase": 0,
+    "verifiedAt": "2026-11-10T23:45:22.583Z",
+    "checks": [
+      "GET /api/health: 200 y contenido correcto",
+      "GET /: 200 y contenido correcto"
+    ]
+  }
+]
