@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "Ruta Café - Encuentra tu próxima pausa",
+  "short_name": "Ruta Café",
+  "description": "Cafeterías, favoritos y reseñas que te acompañan sin conexión.",
+  "lang": "es-MX",
+  "start_url": "./#/",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#183c35",
+  "theme_color": "#183c35",
+  "categories": ["food", "lifestyle"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
