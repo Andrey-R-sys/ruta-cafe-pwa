@@ -1,0 +1,58 @@
+import { asset, apiUrl, toast } from './config.js';
+import { card, detail, escape } from './templates.js';
+export let catalog = [];
+let filter = 'Todos';
+let query = '';
+export function favorites() { return []; }
+export async function loadCatalog() {
+  const remote = apiUrl('/api/catalog');
+  const response = await fetch(remote || asset('data/catalog.json'), { signal: AbortSignal.timeout(5000) });
+  if (!response.ok) throw new Error('No pudimos cargar el catálogo.');
+  catalog = await response.json();
+  return catalog;
+}
+const hero = () => `<section class="hero"><div class="hero-copy"><p class="eyebrow">PEQUEÑAS PAUSAS, GRANDES LUGARES</p><h1>Tu próxima pausa<br>empieza <em>aquí.</em></h1><p>Cafés con historia, rincones con encanto.<br>Encuentra ese lugar al que querrás volver.</p><a class="button" href="#catalog">Explorar cafeterías <span aria-hidden="true">↗</span></a><p class="hero-foot">⌖ Una selección de rincones en Ciudad de México</p></div><img class="hero-art" src="images/hero.svg" alt="Ilustración de una taza de café junto a una rama de olivo" width="650" height="440"></section>`;
+function gridView(favoriteOnly = false, cafes = catalog) {
+  const selected = cafes.filter(cafe => (!favoriteOnly || favorites().includes(cafe.id)) && (filter === 'Todos' || cafe.category === filter) && `${cafe.name} ${cafe.area}`.toLocaleLowerCase('es').includes(query.toLocaleLowerCase('es')));
+  return selected.length ? selected.map(cafe => card(cafe, favorites())).join('') : '<p class="notice">No hay cafeterías en esta selección. Prueba otro filtro o guarda un favorito.</p>';
+}
+export function refreshGrid() {
+  const grid = document.querySelector('#catalog-grid');
+  if (grid) { grid.innerHTML = gridView(location.hash.startsWith('#/favorites')); document.querySelector('#result-count').textContent = `${grid.querySelectorAll('.card').length} lugares`; }
+}
+export async function render() {
+  const route = location.hash.slice(1) || '/';
+  if (route === 'catalog') { document.querySelector('#catalog')?.scrollIntoView({ behavior: 'smooth' }); return; }
+  const view = document.querySelector('#view');
+  if (!view) return;
+  document.querySelectorAll('[data-nav]').forEach(a => a.toggleAttribute('aria-current', false));
+  const nav = document.querySelector(`[data-nav="${route === '/near' ? 'near' : route === '/favorites' ? 'favorites' : 'home'}"]`);
+  nav?.setAttribute('aria-current', 'page');
+  if (route.startsWith('/cafe/')) {
+    const cafe = catalog.find(item => item.id === route.split('/')[2]);
+    view.innerHTML = cafe ? detail(cafe) : '<section class="empty"><h1>No encontramos ese lugar</h1><a href="#/">Volver al inicio</a></section>';
+    if (cafe) await enhanceDetail(cafe);
+  } else if (route === '/settings') {
+    view.innerHTML = `<section class="page"><p class="eyebrow">A TU MANERA</p><h1>Tu café, tus preferencias.</h1><div id="settings-content"><p>Ruta Café es un proyecto educativo. Los lugares son ficticios.</p></div></section>`;
+    await enhanceSettings();
+  } else if (route === '/near') {
+    view.innerHTML = '<section class="page"><p class="eyebrow">A UNOS PASOS</p><h1>Cerca de mí</h1><p>Descubre los lugares más próximos a tu ubicación.</p><button id="locate" class="button">Usar mi ubicación</button><p id="location-status" role="status"></p><div class="grid" id="near-grid"></div></section>';
+    await enhanceNear();
+  } else {
+    const favoriteOnly = route === '/favorites';
+    view.innerHTML = `${favoriteOnly ? '' : hero()}<section class="content" id="catalog"><div class="section-head"><div><p class="eyebrow">${favoriteOnly ? 'TUS LUGARES DE SIEMPRE' : 'EL CAFÉ ES EL PRETEXTO'}</p><h2>${favoriteOnly ? 'Mis favoritos' : 'Encuentra tu lugar favorito'}</h2><p>${favoriteOnly ? 'Tus próximas pausas, guardadas en este dispositivo.' : 'Una buena taza. Un lugar especial. Sin ir tan lejos.'}</p></div><span class="small-label" id="result-count"></span></div><div class="toolbar"><label class="search"><input id="search" type="search" aria-label="Buscar cafetería o colonia" placeholder="Busca una cafetería o una colonia…" value="${escape(query)}"></label><div class="filters" role="group" aria-label="Filtrar por categoría">${['Todos','Especialidad','Terraza','Panadería'].map(name => `<button class="chip" data-filter="${name}" aria-pressed="${filter === name}">${name}</button>`).join('')}</div></div><div id="catalog-grid" class="grid">${gridView(favoriteOnly)}</div><aside class="offline-banner"><span class="badge" aria-hidden="true">↟</span><div><strong>Tu próxima pausa también va sin conexión.</strong><p>Guarda lugares y escribe reseñas. Se sincronizan cuando vuelves.</p></div><a href="#/settings">Cómo funciona ↗</a></aside><div id="install-slot"></div></section>`;
+    refreshGrid();
+    document.querySelector('#search').addEventListener('input', e => { query = e.target.value; refreshGrid(); });
+    document.querySelectorAll('[data-filter]').forEach(button => button.addEventListener('click', () => { filter = button.dataset.filter; document.querySelectorAll('[data-filter]').forEach(other => other.setAttribute('aria-pressed', String(other === button))); refreshGrid(); }));
+    window.dispatchEvent(new Event('viewready'));
+  }
+  document.title = `Ruta Café · ${route.startsWith('/cafe/') ? catalog.find(c=>c.id===route.split('/')[2])?.name || 'Ficha' : route === '/favorites' ? 'Mis favoritos' : route === '/near' ? 'Cerca de mí' : 'Encuentra tu próxima pausa'}`;
+}
+export async function enhanceDetail(_cafe) {}
+export async function enhanceSettings() {}
+export async function enhanceNear() {}
+window.addEventListener('hashchange', () => render().catch(error => toast(error.message)));
+try {
+  await loadCatalog();
+  if (!document.querySelector('[data-ssr]')) await render();
+} catch (error) { document.querySelector('#view').innerHTML = `<section class="empty"><h1>Hagamos una pausa</h1><p>${escape(error.message)}</p><button class="button" onclick="location.reload()">Intentar de nuevo</button></section>`; }
