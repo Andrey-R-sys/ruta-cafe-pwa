@@ -88,5 +88,23 @@
       "GET /js/install.js: 200 y contenido correcto",
       "GET /js/db.js: 200 y contenido correcto"
     ]
+  },
+  {
+    "phase": 7,
+    "verifiedAt": "2026-11-10T23:55:30.628Z",
+    "checks": [
+      "GET /api/health: 200 y contenido correcto",
+      "GET /: 200 y contenido correcto",
+      "GET /css/styles.css: 200 y contenido correcto",
+      "GET /manifest.json: 200 y contenido correcto",
+      "GET /icons/icon-192.png: 200 y contenido correcto",
+      "GET /icons/icon-512.png: 200 y contenido correcto",
+      "GET /sw.js: 200 y contenido correcto",
+      "GET /api/catalog: 200 y contenido correcto",
+      "GET /ficha/lumbre: 200 y contenido correcto",
+      "GET /js/install.js: 200 y contenido correcto",
+      "GET /js/db.js: 200 y contenido correcto",
+      "GET /offline.html: 200 y contenido correcto"
+    ]
   }
 ]

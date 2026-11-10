@@ -1,11 +1,54 @@
-const CACHE = 'ruta-cafe-shell-v1';
+const VERSION = '1.0.0';
+const PREFIX = `ruta-cafe-${encodeURIComponent(new URL(self.registration.scope).pathname)}-`;
+const SHELL = `${PREFIX}shell-${VERSION}`;
+const DATA = `${PREFIX}data-${VERSION}`;
+const IMAGES = `${PREFIX}images-${VERSION}`;
+const PAGES = `${PREFIX}pages-${VERSION}`;
+const url = path => new URL(path, self.registration.scope).href;
+const ASSETS = ['./', 'index.html', 'offline.html', 'css/styles.css', 'manifest.json', 'js/register-sw.js', 'js/app.js', 'js/config.js', 'js/templates.js', 'js/preferences.js', 'js/db.js', 'js/install.js', 'data/catalog.json', 'icons/coffee.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png', 'images/hero.svg', ...['lumbre','botanica','miga','sur','calma','olivo'].map(id => `images/${id}.svg`)];
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(['./', './css/styles.css', './manifest.json', './js/register-sw.js'])));
+  event.waitUntil(caches.open(SHELL).then(cache => cache.addAll(ASSETS.map(url))));
 });
 self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('ruta-cafe-') && key !== CACHE).map(key => caches.delete(key)))));
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith(PREFIX) && ![SHELL, DATA, IMAGES, PAGES].includes(key)).map(key => caches.delete(key)))));
 });
+async function save(name, request, response) {
+  if (!response.ok || response.type === 'opaque') return;
+  const cache = await caches.open(name);
+  await cache.put(request, response.clone());
+  const keys = await cache.keys();
+  await Promise.all(keys.slice(0, Math.max(0, keys.length - 60)).map(key => cache.delete(key)));
+}
+async function networkFirst(request, cacheName, navigation = false) {
+  try {
+    const response = await fetch(request, { signal: AbortSignal.timeout(3500) });
+    if (!response.ok) throw new Error('Respuesta remota no disponible');
+    await save(cacheName, request, response);
+    return response;
+  } catch {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    if (navigation) {
+      const path = new URL(request.url).pathname;
+      return (await caches.match(url(path === new URL(self.registration.scope).pathname || path.endsWith('/index.html') ? './' : 'offline.html'))) || Response.error();
+    }
+    return new Response(JSON.stringify({ error: 'Sin conexión' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
+  }
+}
+async function staleWhileRevalidate(event) {
+  const cached = await caches.match(event.request);
+  const refresh = fetch(event.request).then(async response => { await save(IMAGES, event.request, response); return response; });
+  event.waitUntil(refresh.catch(() => {}));
+  return cached || refresh;
+}
 self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-  event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request)));
+  const request = event.request;
+  const target = new URL(request.url);
+  if (request.method !== 'GET' || target.origin !== self.location.origin) return;
+  if (request.mode === 'navigate') { event.respondWith(networkFirst(request, PAGES, true)); return; }
+  if (target.pathname.endsWith('/api/catalog') || target.pathname.endsWith('/data/catalog.json')) { event.respondWith(networkFirst(request, DATA)); return; }
+  if (target.pathname.includes('/api/')) return;
+  if (/\.(svg|png)$/.test(target.pathname)) { event.respondWith(staleWhileRevalidate(event)); return; }
+  // Cache first para el shell; network first para HTML/datos; SWR para imágenes.
+  event.respondWith(caches.match(request).then(cached => cached || fetch(request)));
 });
