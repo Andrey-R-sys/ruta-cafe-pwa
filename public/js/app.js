@@ -1,14 +1,29 @@
 import { asset, apiUrl, toast } from './config.js';
 import { card, detail, escape } from './templates.js';
+import './db.js';
+import { preference, savePreference } from './preferences.js';
 export let catalog = [];
 let filter = 'Todos';
 let query = '';
-export function favorites() { return []; }
+export function favorites() { const values = preference('favorites', []); return Array.isArray(values) ? values : []; }
 export async function loadCatalog() {
-  const remote = apiUrl('/api/catalog');
-  const response = await fetch(remote || asset('data/catalog.json'), { signal: AbortSignal.timeout(5000) });
-  if (!response.ok) throw new Error('No pudimos cargar el catálogo.');
-  catalog = await response.json();
+  try {
+    const remote = apiUrl('/api/catalog');
+    const response = await fetch(remote || asset('data/catalog.json'), { signal: AbortSignal.timeout(4500) });
+    if (!response.ok) throw new Error('Catálogo remoto no disponible');
+    const data = await response.json();
+    if (!Array.isArray(data) || !data.length || data.some(c => !/^[a-z0-9-]+$/.test(c.id) || !/^images\/[a-z0-9-]+\.svg$/.test(c.image))) throw new Error('Catálogo inválido');
+    catalog = data;
+    await RouteDB.put('catalog', { id: 'snapshot', data, updatedAt: Date.now() }).catch(() => {});
+  } catch {
+    const saved = await RouteDB.get('catalog', 'snapshot').catch(() => null);
+    if (saved) catalog = saved.data;
+    else {
+      const response = await fetch(asset('data/catalog.json'));
+      if (!response.ok) throw new Error('No pudimos recuperar el catálogo. Visita la app con conexión una vez.');
+      catalog = await response.json();
+    }
+  }
   return catalog;
 }
 const hero = () => `<section class="hero"><div class="hero-copy"><p class="eyebrow">PEQUEÑAS PAUSAS, GRANDES LUGARES</p><h1>Tu próxima pausa<br>empieza <em>aquí.</em></h1><p>Cafés con historia, rincones con encanto.<br>Encuentra ese lugar al que querrás volver.</p><a class="button" href="#catalog">Explorar cafeterías <span aria-hidden="true">↗</span></a><p class="hero-foot">⌖ Una selección de rincones en Ciudad de México</p></div><img class="hero-art" src="images/hero.svg" alt="Ilustración de una taza de café junto a una rama de olivo" width="650" height="440"></section>`;
@@ -49,9 +64,26 @@ export async function render() {
   document.title = `Ruta Café · ${route.startsWith('/cafe/') ? catalog.find(c=>c.id===route.split('/')[2])?.name || 'Ficha' : route === '/favorites' ? 'Mis favoritos' : route === '/near' ? 'Cerca de mí' : 'Encuentra tu próxima pausa'}`;
 }
 export async function enhanceDetail(_cafe) {}
-export async function enhanceSettings() {}
+export async function enhanceSettings() {
+  const saved = await RouteDB.get('catalog', 'snapshot').catch(() => null);
+  document.querySelector('#settings-content').innerHTML = `<div class="settings-row"><div><strong>Datos en tu dispositivo</strong><p>${saved ? `Catálogo respaldado: ${new Date(saved.updatedAt).toLocaleString('es-MX')}` : 'Se utiliza el catálogo incluido en la app.'}</p><p>Favoritos y tema se guardan en localStorage. Catálogo y reseñas viven en IndexedDB.</p></div></div><p class="notice">Visita la app una vez con conexión para preparar su uso offline. Los datos de este dispositivo se conservan hasta que borres los datos del sitio.</p><div id="extra-settings"></div>`;
+}
 export async function enhanceNear() {}
 window.addEventListener('hashchange', () => render().catch(error => toast(error.message)));
+document.addEventListener('click', event => {
+  const button = event.target.closest('[data-favorite]');
+  if (!button) return;
+  const id = button.dataset.favorite;
+  const values = favorites();
+  const saved = !values.includes(id);
+  try {
+    savePreference('favorites', saved ? [...values, id] : values.filter(value => value !== id));
+    button.setAttribute('aria-pressed', String(saved));
+    button.textContent = button.classList.contains('favorite') ? saved ? '♥' : '♡' : saved ? '♥ Guardado' : '♡ Guardar favorito';
+    toast(saved ? 'Un buen lugar, guardado.' : 'Lugar eliminado de tus favoritos.');
+    refreshGrid();
+  } catch { toast('El navegador no permite guardar preferencias en este dispositivo.'); }
+});
 try {
   await loadCatalog();
   if (!document.querySelector('[data-ssr]')) await render();
