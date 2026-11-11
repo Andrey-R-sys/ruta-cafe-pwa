@@ -9,7 +9,26 @@ const url = path => new URL(path, self.registration.scope).href;
 const ASSETS = ['./', 'index.html', 'offline.html', 'css/styles.css', 'manifest.json', 'js/register-sw.js', 'js/app.js', 'js/config.js', 'js/templates.js', 'js/preferences.js', 'js/db.js', 'js/install.js', 'data/catalog.json', 'icons/coffee.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png', 'images/hero.svg', ...['lumbre','botanica','miga','sur','calma','olivo'].map(id => `images/${id}.svg`)];
 self.addEventListener('install', event => {
   ASSETS.push('js/sync.js', 'js/reviews.js');
+  ASSETS.push('js/notifications.js');
   event.waitUntil(caches.open(SHELL).then(cache => cache.addAll(ASSETS.map(url))));
+});
+self.addEventListener('push', event => {
+  let message = {};
+  try { message = event.data?.json() || {}; } catch { message = { body: event.data?.text() }; }
+  const destination = new URL(typeof message.url === 'string' ? message.url : './#/', self.registration.scope);
+  const safe = destination.origin === self.location.origin && destination.pathname.startsWith(new URL(self.registration.scope).pathname);
+  event.waitUntil(self.registration.showNotification(typeof message.title === 'string' ? message.title.slice(0,80) : 'Ruta Café', { body: typeof message.body === 'string' ? message.body.slice(0,240) : 'Tu próxima pausa te espera.', icon: url('icons/icon-192.png'), badge: url('icons/icon-192.png'), tag: 'ruta-push', data: { url: safe ? destination.href : url('./#/') } }));
+});
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const requested = new URL(event.notification.data?.url || './#/', self.registration.scope);
+    const target = requested.origin === self.location.origin && requested.pathname.startsWith(new URL(self.registration.scope).pathname) ? requested.href : url('./#/');
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const existing = windows.find(client => client.url.startsWith(self.registration.scope));
+    if (existing) { await existing.navigate(target); await existing.focus(); }
+    else await self.clients.openWindow(target);
+  })());
 });
 self.addEventListener('sync', event => {
   if (event.tag === 'sync-reviews') event.waitUntil(RouteSync.flush().then(async () => {

@@ -1,8 +1,9 @@
-import { asset, apiUrl, toast } from './config.js';
+import { asset, apiUrl, apiBase, toast } from './config.js';
 import { card, detail, escape } from './templates.js';
 import './db.js';
 import { preference, savePreference } from './preferences.js';
-import { mountReviews } from './reviews.js';
+import { mountReviews, synchronize } from './reviews.js';
+import { localNotification, enablePush, disablePush } from './notifications.js';
 export let catalog = [];
 let filter = 'Todos';
 let query = '';
@@ -68,6 +69,24 @@ export async function enhanceDetail(cafe) { await mountReviews(cafe); }
 export async function enhanceSettings() {
   const saved = await RouteDB.get('catalog', 'snapshot').catch(() => null);
   document.querySelector('#settings-content').innerHTML = `<div class="settings-row"><div><strong>Datos en tu dispositivo</strong><p>${saved ? `Catálogo respaldado: ${new Date(saved.updatedAt).toLocaleString('es-MX')}` : 'Se utiliza el catálogo incluido en la app.'}</p><p>Favoritos y tema se guardan en localStorage. Catálogo y reseñas viven en IndexedDB.</p></div></div><p class="notice">Visita la app una vez con conexión para preparar su uso offline. Los datos de este dispositivo se conservan hasta que borres los datos del sitio.</p><div id="extra-settings"></div>`;
+  const pending = (await RouteDB.all('outbox')).length;
+  document.querySelector('#extra-settings').innerHTML = `<div class="settings-row"><div><strong>Reseñas por sincronizar: <span id="pending-count">${pending}</span></strong><p>Background Sync reintenta cuando el navegador lo permite. También puedes sincronizar aquí.</p></div><button id="sync-now" class="button secondary">Sincronizar ahora</button></div><h2>Notificaciones</h2><p>Solo pediremos permiso cuando pulses un botón.</p><div class="filters"><button id="local-notification" class="button secondary">Probar aviso local</button><button id="enable-push" class="button">Activar push</button><button id="disable-push" class="button secondary">Desactivar push</button></div><h2>Servidor de la app</h2><p>GitHub Pages guarda la app. Un servidor adicional recibe reseñas y envía push. Si no hay uno configurado, tus reseñas permanecen pendientes.</p><form id="api-form" class="form-grid"><label>URL del servidor HTTPS<input name="url" type="url" value="${escape(apiBase() || '')}" placeholder="https://tu-servidor.example" aria-describedby="api-help"></label><small id="api-help">Solo el origen, sin /api. Déjalo vacío para usar la configuración predeterminada.</small><button class="button" type="submit">Guardar servidor</button></form><p class="notice">Los lugares y calificaciones del catálogo son ficticios. Esta app es una demostración educativa.</p>`;
+  const action = (id, callback) => document.querySelector(id).addEventListener('click', async event => { event.target.disabled = true; try { await callback(); } catch (error) { toast(error.message); } finally { event.target.disabled = false; } });
+  action('#local-notification', localNotification);
+  action('#enable-push', enablePush);
+  action('#disable-push', disablePush);
+  action('#sync-now', async () => { await synchronize(); const count = (await RouteDB.all('outbox')).length; document.querySelector('#pending-count').textContent = count; toast(count ? `Quedan ${count} reseñas pendientes. Comprueba la conexión y el servidor.` : 'Todo está sincronizado.'); });
+  document.querySelector('#api-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    try {
+      const value = new FormData(event.target).get('url').trim();
+      const endpoint = value ? new URL(value) : null;
+      if (endpoint && (endpoint.username || endpoint.password || (endpoint.protocol !== 'https:' && !(endpoint.protocol === 'http:' && ['localhost','127.0.0.1'].includes(endpoint.hostname))))) throw new Error('Usa HTTPS o localhost para desarrollo.');
+      if (endpoint) localStorage.setItem('ruta-api', endpoint.origin); else localStorage.removeItem('ruta-api');
+      await RouteDB.put('settings', { id: 'api', value: apiBase() });
+      toast('Servidor guardado.'); await synchronize();
+    } catch (error) { toast(error.message || 'URL inválida.'); }
+  });
 }
 export async function enhanceNear() {}
 window.addEventListener('hashchange', () => render().catch(error => toast(error.message)));
