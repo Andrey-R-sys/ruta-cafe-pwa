@@ -48,6 +48,13 @@ try {
     checks.push('Suite API: aprobada');
     checks.push('9 pruebas de navegador aprobadas e instalación en perfil temporal confirmada');
   }
+  if (phase === 13) {
+    const evidence = JSON.parse(await fs.readFile('docs/evidencias/pages-local.json','utf8'));
+    assert.equal(evidence.offlineSubpath, true);
+    assert.equal(evidence.prerenderedHydrated, true);
+    await fs.access('dist/ficha/lumbre/index.html');
+    checks.push('Build estático verificado en subcarpeta con scope correcto, hidratación y offline');
+  }
   await fs.mkdir('docs', { recursive: true });
   const history = JSON.parse(await fs.readFile('docs/fases.json', 'utf8').catch(() => '[]'));
   history.push({ phase, verifiedAt: new Date().toISOString(), checks });

@@ -1,0 +1,10 @@
+import fs from 'node:fs/promises';
+const version=process.argv[2];
+if(!/^\d+\.\d+\.\d+$/.test(version||''))throw new Error('Uso: node scripts/release.mjs 1.0.1');
+const packageJson=JSON.parse(await fs.readFile('package.json','utf8'));packageJson.version=version;
+await fs.writeFile('package.json',JSON.stringify(packageJson,null,2)+'\n');
+const lock=JSON.parse(await fs.readFile('package-lock.json','utf8'));lock.version=version;lock.packages[''].version=version;
+await fs.writeFile('package-lock.json',JSON.stringify(lock,null,2)+'\n');
+const sw=await fs.readFile('public/sw.js','utf8');
+await fs.writeFile('public/sw.js',sw.replace(/const VERSION = '[^']+'/,`const VERSION = '${version}'`));
+console.log(`Versión ${version} lista. Verifica, haz commit y push para publicar.`);
