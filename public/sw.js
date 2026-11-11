@@ -10,6 +10,7 @@ const ASSETS = ['./', 'index.html', 'offline.html', 'css/styles.css', 'manifest.
 self.addEventListener('install', event => {
   ASSETS.push('js/sync.js', 'js/reviews.js');
   ASSETS.push('js/notifications.js');
+  ASSETS.push('js/device.js');
   event.waitUntil(caches.open(SHELL).then(cache => cache.addAll(ASSETS.map(url))));
 });
 self.addEventListener('push', event => {

@@ -4,6 +4,7 @@ import './db.js';
 import { preference, savePreference } from './preferences.js';
 import { mountReviews, synchronize } from './reviews.js';
 import { localNotification, enablePush, disablePush } from './notifications.js';
+import { locate, distanceKm, share } from './device.js';
 export let catalog = [];
 let filter = 'Todos';
 let query = '';
@@ -65,7 +66,21 @@ export async function render() {
   }
   document.title = `Ruta Café · ${route.startsWith('/cafe/') ? catalog.find(c=>c.id===route.split('/')[2])?.name || 'Ficha' : route === '/favorites' ? 'Mis favoritos' : route === '/near' ? 'Cerca de mí' : 'Encuentra tu próxima pausa'}`;
 }
-export async function enhanceDetail(cafe) { await mountReviews(cafe); }
+export async function enhanceDetail(cafe) {
+  const favorite = document.querySelector('.page [data-favorite]');
+  const saved = favorites().includes(cafe.id);
+  favorite?.setAttribute('aria-pressed', String(saved));
+  if (favorite) favorite.textContent = saved ? '♥ Guardado' : '♡ Guardar favorito';
+  const button = document.querySelector('#share');
+  if (button) {
+    button.hidden = false;
+    button.addEventListener('click', async () => {
+      try { await share(cafe, asset(`#/cafe/${cafe.id}`)); if (!navigator.share) toast('Enlace copiado.'); }
+      catch (error) { if (error.name !== 'AbortError') toast(error.message); }
+    });
+  }
+  await mountReviews(cafe);
+}
 export async function enhanceSettings() {
   const saved = await RouteDB.get('catalog', 'snapshot').catch(() => null);
   document.querySelector('#settings-content').innerHTML = `<div class="settings-row"><div><strong>Datos en tu dispositivo</strong><p>${saved ? `Catálogo respaldado: ${new Date(saved.updatedAt).toLocaleString('es-MX')}` : 'Se utiliza el catálogo incluido en la app.'}</p><p>Favoritos y tema se guardan en localStorage. Catálogo y reseñas viven en IndexedDB.</p></div></div><p class="notice">Visita la app una vez con conexión para preparar su uso offline. Los datos de este dispositivo se conservan hasta que borres los datos del sitio.</p><div id="extra-settings"></div>`;
@@ -88,7 +103,21 @@ export async function enhanceSettings() {
     } catch (error) { toast(error.message || 'URL inválida.'); }
   });
 }
-export async function enhanceNear() {}
+export async function enhanceNear() {
+  document.querySelector('#locate').addEventListener('click', async event => {
+    const button = event.target;
+    const status = document.querySelector('#location-status');
+    button.disabled = true; status.textContent = 'Buscando tu ubicación…';
+    try {
+      const position = await locate();
+      const sorted = catalog.map(cafe => ({ ...cafe, distance: distanceKm(position, cafe) })).sort((a,b) => a.distance-b.distance);
+      if (!status.isConnected) return;
+      status.textContent = 'Distancias aproximadas en línea recta. Tu ubicación no se guarda ni se envía al servidor. Los lugares son ficticios.';
+      document.querySelector('#near-grid').innerHTML = sorted.map(cafe => card(cafe, favorites())).join('');
+    } catch (error) { status.textContent = error.message; }
+    finally { button.disabled = false; }
+  });
+}
 window.addEventListener('hashchange', () => render().catch(error => toast(error.message)));
 document.addEventListener('click', event => {
   const button = event.target.closest('[data-favorite]');
@@ -106,5 +135,10 @@ document.addEventListener('click', event => {
 });
 try {
   await loadCatalog();
-  if (!document.querySelector('[data-ssr]')) await render();
+  const ssr = document.querySelector('[data-ssr]');
+  if (ssr && !location.hash) {
+    const data = JSON.parse(document.querySelector('#ssr-data').textContent);
+    await enhanceDetail(data);
+    ssr.dataset.hydrated = 'true';
+  } else await render();
 } catch (error) { document.querySelector('#view').innerHTML = `<section class="empty"><h1>Hagamos una pausa</h1><p>${escape(error.message)}</p><button class="button" onclick="location.reload()">Intentar de nuevo</button></section>`; }

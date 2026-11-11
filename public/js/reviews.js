@@ -2,6 +2,7 @@ import './db.js';
 import './sync.js';
 import { apiBase, apiUrl, toast } from './config.js';
 import { escape } from './templates.js';
+import { vibrate } from './device.js';
 export async function synchronize() {
   if (!navigator.onLine) return;
   try {
@@ -38,7 +39,7 @@ export async function mountReviews(cafe) {
     const button = form.querySelector('button'); button.disabled = true;
     try {
       await RouteDB.queueReview({ id: crypto.randomUUID(), cafeId: cafe.id, name, text, rating: Number(fields.get('rating')), createdAt: new Date().toISOString(), status: 'pending', apiBase: apiBase() });
-      form.reset(); toast('Reseña guardada en tu dispositivo.'); await list();
+      form.reset(); vibrate(); toast('Reseña guardada en tu dispositivo.'); await list();
       const registration = await navigator.serviceWorker?.getRegistration();
       if (registration?.sync) await registration.sync.register('sync-reviews').catch(() => {});
       await synchronize(); await list();

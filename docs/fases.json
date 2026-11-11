@@ -166,5 +166,27 @@
       "GET /sw.js: 200 y contenido correcto",
       "GET /api/push/key: 200 y contenido correcto"
     ]
+  },
+  {
+    "phase": 11,
+    "verifiedAt": "2026-11-11T00:06:35.357Z",
+    "checks": [
+      "GET /api/health: 200 y contenido correcto",
+      "GET /: 200 y contenido correcto",
+      "GET /css/styles.css: 200 y contenido correcto",
+      "GET /manifest.json: 200 y contenido correcto",
+      "GET /icons/icon-192.png: 200 y contenido correcto",
+      "GET /icons/icon-512.png: 200 y contenido correcto",
+      "GET /sw.js: 200 y contenido correcto",
+      "GET /api/catalog: 200 y contenido correcto",
+      "GET /ficha/lumbre: 200 y contenido correcto",
+      "GET /js/install.js: 200 y contenido correcto",
+      "GET /js/db.js: 200 y contenido correcto",
+      "GET /offline.html: 200 y contenido correcto",
+      "GET /api/reviews?cafeId=lumbre: 200 y contenido correcto",
+      "GET /sw.js: 200 y contenido correcto",
+      "GET /api/push/key: 200 y contenido correcto",
+      "GET /js/device.js: 200 y contenido correcto"
+    ]
   }
 ]
