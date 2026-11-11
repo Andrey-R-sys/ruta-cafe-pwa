@@ -1,3 +1,4 @@
+importScripts('./js/db.js', './js/sync.js');
 const VERSION = '1.0.0';
 const PREFIX = `ruta-cafe-${encodeURIComponent(new URL(self.registration.scope).pathname)}-`;
 const SHELL = `${PREFIX}shell-${VERSION}`;
@@ -7,7 +8,14 @@ const PAGES = `${PREFIX}pages-${VERSION}`;
 const url = path => new URL(path, self.registration.scope).href;
 const ASSETS = ['./', 'index.html', 'offline.html', 'css/styles.css', 'manifest.json', 'js/register-sw.js', 'js/app.js', 'js/config.js', 'js/templates.js', 'js/preferences.js', 'js/db.js', 'js/install.js', 'data/catalog.json', 'icons/coffee.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png', 'images/hero.svg', ...['lumbre','botanica','miga','sur','calma','olivo'].map(id => `images/${id}.svg`)];
 self.addEventListener('install', event => {
+  ASSETS.push('js/sync.js', 'js/reviews.js');
   event.waitUntil(caches.open(SHELL).then(cache => cache.addAll(ASSETS.map(url))));
+});
+self.addEventListener('sync', event => {
+  if (event.tag === 'sync-reviews') event.waitUntil(RouteSync.flush().then(async () => {
+    const windows = await self.clients.matchAll({ type: 'window' });
+    windows.forEach(client => client.postMessage({ type: 'REVIEWS_SYNCED' }));
+  }));
 });
 self.addEventListener('activate', event => {
   event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith(PREFIX) && ![SHELL, DATA, IMAGES, PAGES].includes(key)).map(key => caches.delete(key)))));

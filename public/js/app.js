@@ -2,6 +2,7 @@ import { asset, apiUrl, toast } from './config.js';
 import { card, detail, escape } from './templates.js';
 import './db.js';
 import { preference, savePreference } from './preferences.js';
+import { mountReviews } from './reviews.js';
 export let catalog = [];
 let filter = 'Todos';
 let query = '';
@@ -63,7 +64,7 @@ export async function render() {
   }
   document.title = `Ruta Café · ${route.startsWith('/cafe/') ? catalog.find(c=>c.id===route.split('/')[2])?.name || 'Ficha' : route === '/favorites' ? 'Mis favoritos' : route === '/near' ? 'Cerca de mí' : 'Encuentra tu próxima pausa'}`;
 }
-export async function enhanceDetail(_cafe) {}
+export async function enhanceDetail(cafe) { await mountReviews(cafe); }
 export async function enhanceSettings() {
   const saved = await RouteDB.get('catalog', 'snapshot').catch(() => null);
   document.querySelector('#settings-content').innerHTML = `<div class="settings-row"><div><strong>Datos en tu dispositivo</strong><p>${saved ? `Catálogo respaldado: ${new Date(saved.updatedAt).toLocaleString('es-MX')}` : 'Se utiliza el catálogo incluido en la app.'}</p><p>Favoritos y tema se guardan en localStorage. Catálogo y reseñas viven en IndexedDB.</p></div></div><p class="notice">Visita la app una vez con conexión para preparar su uso offline. Los datos de este dispositivo se conservan hasta que borres los datos del sitio.</p><div id="extra-settings"></div>`;

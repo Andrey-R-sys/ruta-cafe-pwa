@@ -3,14 +3,18 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import { renderDocument } from './ssr.js';
+import { createStore } from './store.js';
+import { reviewRoutes } from './reviews.js';
 
 export const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-export function createApp() {
+export function createApp(options = {}) {
   const app = express();
   app.disable('x-powered-by');
   app.use(express.json({ limit: '16kb' }));
   app.get('/api/health', (_req, res) => res.json({ ok: true, version: '1.0.0' }));
   const catalog = JSON.parse(fs.readFileSync(path.join(root, 'public/data/catalog.json'), 'utf8'));
+  const store = createStore(options.dataDir);
+  reviewRoutes(app, store, catalog);
   app.get('/api/catalog', (_req, res) => res.json(catalog));
   app.get('/ficha/:id', async (req, res) => {
     const cafe = catalog.find(item => item.id === req.params.id);
