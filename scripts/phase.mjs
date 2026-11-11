@@ -36,10 +36,17 @@ try {
   if (phase >= 9) await check('/sw.js', 'SKIP_WAITING');
   if (phase >= 10) await check('/api/push/key', value => 'enabled' in value, 'json');
   if (phase >= 11) await check('/js/device.js', 'geolocation');
-  if (phase >= 12) {
+  if (phase === 12) {
     const result = spawnSync(process.execPath, ['--test', 'tests/api.test.mjs'], { encoding: 'utf8', cwd: root });
     assert.equal(result.status, 0, result.stdout + result.stderr);
+    await fs.writeFile('docs/evidencias/api.tap', result.stdout);
+    const browser = JSON.parse(await fs.readFile('docs/evidencias/playwright-results.json','utf8'));
+    assert.equal(browser.stats.unexpected, 0);
+    assert.equal(browser.stats.expected, 9);
+    const install = JSON.parse(await fs.readFile('docs/evidencias/instalacion.json','utf8'));
+    assert.equal(install.installed, true);
     checks.push('Suite API: aprobada');
+    checks.push('9 pruebas de navegador aprobadas e instalación en perfil temporal confirmada');
   }
   await fs.mkdir('docs', { recursive: true });
   const history = JSON.parse(await fs.readFile('docs/fases.json', 'utf8').catch(() => '[]'));

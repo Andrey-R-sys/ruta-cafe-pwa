@@ -1,0 +1,35 @@
+TAP version 13
+# Subtest: API catálogo y SSR con contenido sin JavaScript
+ok 1 - API catálogo y SSR con contenido sin JavaScript
+  ---
+  duration_ms: 233.3627
+  ...
+# Subtest: Reseñas válidas, duplicados concurrentes y persistencia
+ok 2 - Reseñas válidas, duplicados concurrentes y persistencia
+  ---
+  duration_ms: 128.9011
+  ...
+# Subtest: Rechazo de datos inválidos, JSON malformado y origen ajeno
+ok 3 - Rechazo de datos inválidos, JSON malformado y origen ajeno
+  ---
+  duration_ms: 29.4123
+  ...
+# Subtest: Push: suscripción válida, deduplicación, administración y baja de expiradas
+ok 4 - Push: suscripción válida, deduplicación, administración y baja de expiradas
+  ---
+  duration_ms: 65.4816
+  ...
+# Subtest: Manifiesto y dimensiones PNG reales
+ok 5 - Manifiesto y dimensiones PNG reales
+  ---
+  duration_ms: 40.7729
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1682.4204

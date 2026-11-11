@@ -1,0 +1,13 @@
+{
+  "testedAt": "2026-11-11T00:12:47.155Z",
+  "browser": "157.0.8103.50",
+  "profile": "temporal, eliminado al terminar",
+  "eligibility": {
+    "installabilityErrors": []
+  },
+  "installed": true,
+  "state": {
+    "badgeCount": 0,
+    "fileHandlers": []
+  }
+}
