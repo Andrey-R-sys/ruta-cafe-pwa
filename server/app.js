@@ -20,7 +20,8 @@ export function createApp(options = {}) {
     next();
   });
   app.use(express.json({ limit: '16kb' }));
-  app.get('/api/health', (_req, res) => res.json({ ok: true, version: '1.0.0' }));
+  const version = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version;
+  app.get('/api/health', (_req, res) => res.json({ ok: true, version }));
   const catalog = JSON.parse(fs.readFileSync(path.join(root, 'public/data/catalog.json'), 'utf8'));
   const store = createStore(options.dataDir);
   reviewRoutes(app, store, catalog);

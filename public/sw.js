@@ -1,5 +1,5 @@
 importScripts('./js/db.js', './js/sync.js');
-const VERSION = '1.0.0';
+const VERSION = '1.0.1';
 const PREFIX = `ruta-cafe-${encodeURIComponent(new URL(self.registration.scope).pathname)}-`;
 const SHELL = `${PREFIX}shell-${VERSION}`;
 const DATA = `${PREFIX}data-${VERSION}`;

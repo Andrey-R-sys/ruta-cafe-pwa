@@ -1,0 +1,13 @@
+{
+  "testedAt": "2026-11-11T00:21:36.894Z",
+  "url": "https://andrey-r-sys.github.io/ruta-cafe-pwa/",
+  "httpStatus": 200,
+  "version": "1.0.0",
+  "scope": "https://andrey-r-sys.github.io/ruta-cafe-pwa/",
+  "catalogCount": 6,
+  "prerenderHydrated": true,
+  "offlineReload": true,
+  "offlineReviewQueued": true,
+  "javascriptErrors": [],
+  "backend": "No desplegado en Pages; las reseñas permanecen locales hasta configurar API."
+}
