@@ -18,6 +18,7 @@ try {
   await context.setOffline(false);
   const sw=await (await page.request.get(deployment.pages+'sw.js')).text();
   const version=/const VERSION = '([^']+)'/.exec(sw)[1];
+  if(process.argv[2]) assert.equal(version,process.argv[2]);
   await fs.writeFile('docs/evidencias/pages-publico.json',JSON.stringify({testedAt:new Date().toISOString(),url:deployment.pages,httpStatus:200,version,scope,catalogCount:6,prerenderHydrated:true,offlineReload:true,offlineReviewQueued:true,javascriptErrors:errors,backend:'No desplegado en Pages; las reseñas permanecen locales hasta configurar API.'},null,2));
   console.log(`GitHub Pages verificado: HTTP 200, versión ${version}, scope correcto, CSR, hidratación, offline y reseña local.`);
 }finally{await browser.close();}

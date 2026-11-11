@@ -5,6 +5,8 @@ PWA educativa en español para explorar seis cafeterías ficticias de CDMX. Cons
 **Aplicación:** https://andrey-r-sys.github.io/ruta-cafe-pwa/  
 **Repositorio:** https://github.com/Andrey-R-sys/ruta-cafe-pwa
 
+**Reporte:** [PDF](output/pdf/reporte-ruta-cafe.pdf) · [Markdown editable](docs/REPORTE.md) · [Casos de prueba](docs/PRUEBAS.md)
+
 ## Iniciar
 
 Requiere Node.js 22.14 o posterior, npm y Git.

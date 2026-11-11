@@ -1,8 +1,8 @@
 {
-  "testedAt": "2026-11-11T00:21:36.894Z",
+  "testedAt": "2026-11-11T00:26:41.176Z",
   "url": "https://andrey-r-sys.github.io/ruta-cafe-pwa/",
   "httpStatus": 200,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "scope": "https://andrey-r-sys.github.io/ruta-cafe-pwa/",
   "catalogCount": 6,
   "prerenderHydrated": true,

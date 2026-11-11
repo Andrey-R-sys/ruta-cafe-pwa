@@ -3,5 +3,9 @@
   "name": "ruta-cafe-pwa",
   "repository": "https://github.com/Andrey-R-sys/ruta-cafe-pwa",
   "pages": "https://andrey-r-sys.github.io/ruta-cafe-pwa/",
-  "createdAt": "2026-11-11T00:15:51.040Z"
+  "createdAt": "2026-11-11T00:15:51.040Z",
+  "deployments": [
+    { "version": "1.0.0", "commit": "d01a66fbb481a589d68ec60af327642ffd044083", "run": "https://github.com/Andrey-R-sys/ruta-cafe-pwa/actions/runs/42930381576", "conclusion": "success" },
+    { "version": "1.0.1", "commit": "c64bbb71abdd890e7e9a3d07895bf61c86c9715d", "run": "https://github.com/Andrey-R-sys/ruta-cafe-pwa/actions/runs/42931160379", "conclusion": "success" }
+  ]
 }
