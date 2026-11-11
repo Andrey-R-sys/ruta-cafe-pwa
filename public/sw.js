@@ -18,7 +18,10 @@ self.addEventListener('sync', event => {
   }));
 });
 self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith(PREFIX) && ![SHELL, DATA, IMAGES, PAGES].includes(key)).map(key => caches.delete(key)))));
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith(PREFIX) && ![SHELL, DATA, IMAGES, PAGES].includes(key)).map(key => caches.delete(key)))).then(() => self.clients.claim()));
+});
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') event.waitUntil(self.skipWaiting());
 });
 async function save(name, request, response) {
   if (!response.ok || response.type === 'opaque') return;
